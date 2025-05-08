@@ -1,11 +1,19 @@
-import React, { useState, useRef } from 'react';
-import ImageUploader from './components/ImageUploader';
+import React, { useState } from 'react';
+import Dropzone from './components/Dropzone';
 import ImageGrid from './components/ImageGrid';
 
 const App: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [gridSize, setGridSize] = useState<number>(4);
   const [tiles, setTiles] = useState<Blob[]>([]);
+
+  const handleFile = (f: File) => {
+    setFile(f);
+    const url = URL.createObjectURL(f);
+    setPreview(url);
+    setTiles([]);
+  };
 
   const handleSlice = async () => {
     if (!file) return;
@@ -13,40 +21,36 @@ const App: React.FC = () => {
     img.src = URL.createObjectURL(file);
     await new Promise(res => { img.onload = res; });
 
-    const tileWidth = Math.floor(img.width / gridSize);
-    const tileHeight = Math.floor(img.height / gridSize);
-    const fragments: Blob[] = [];
+    const tileW = Math.floor(img.width / gridSize);
+    const tileH = Math.floor(img.height / gridSize);
+    const frags: Blob[] = [];
 
     for (let y = 0; y < gridSize; y++) {
       for (let x = 0; x < gridSize; x++) {
         const canvas = document.createElement('canvas');
-        canvas.width = tileWidth;
-        canvas.height = tileHeight;
+        canvas.width = tileW;
+        canvas.height = tileH;
         const ctx = canvas.getContext('2d')!;
-        ctx.drawImage(
-          img,
-          x * tileWidth,
-          y * tileHeight,
-          tileWidth,
-          tileHeight,
-          0,
-          0,
-          tileWidth,
-          tileHeight
-        );
+        ctx.drawImage(img, x*tileW, y*tileH, tileW, tileH, 0, 0, tileW, tileH);
         const blob = await new Promise<Blob>(res => canvas.toBlob(b => res(b!)));
-        fragments.push(blob);
+        frags.push(blob);
       }
     }
-    setTiles(fragments);
+    setTiles(frags);
   };
 
   return (
     <div className="app-container">
       <h1>Emoji Slicer</h1>
-      <ImageUploader onFileSelect={setFile} />
+      <Dropzone onFile={handleFile} preview={preview} />
+      {preview && (
+        <div className="preview">
+          <h2>Preview</h2>
+          <img src={preview} alt="Preview" />
+        </div>
+      )}
       <div className="controls">
-        <label>Grid Size: {gridSize} x {gridSize}</label>
+        <label>Grid Size: {gridSize} × {gridSize}</label>
         <input
           type="range"
           min={1}
