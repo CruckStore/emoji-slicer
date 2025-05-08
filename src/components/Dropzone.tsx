@@ -1,12 +1,13 @@
 import React, { useRef, useState } from 'react';
 
-interface Props { onFile: (file: File) => void; preview: string | null; }
+interface Props { onFile: (file: File) => void; }
 const Dropzone: React.FC<Props> = ({ onFile }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [hover, setHover] = useState(false);
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); setHover(false);
+    e.preventDefault();
+    setHover(false);
     if (e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0]);
   };
 

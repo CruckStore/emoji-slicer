@@ -7,13 +7,7 @@ const App: React.FC = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const [gridSize, setGridSize] = useState<number>(4);
   const [tiles, setTiles] = useState<Blob[]>([]);
-
-  const handleFile = (f: File) => {
-    setFile(f);
-    const url = URL.createObjectURL(f);
-    setPreview(url);
-    setTiles([]);
-  };
+  const [hasSliced, setHasSliced] = useState<boolean>(false);
 
   const sliceImage = useCallback(async () => {
     if (!file) return;
@@ -53,16 +47,26 @@ const App: React.FC = () => {
     setTiles(frags);
   }, [file, gridSize]);
 
+  // when grid changes after slicing, auto-reslice
   useEffect(() => {
-    if (tiles.length > 0) {
+    if (hasSliced) sliceImage();
+  }, [gridSize, sliceImage, hasSliced]);
+
+  const handleFile = (f: File) => {
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
+    // if user had sliced before, auto-slice new image
+    if (hasSliced) {
       sliceImage();
+    } else {
+      setTiles([]);
     }
-  }, [gridSize, sliceImage]);
+  };
 
   return (
     <div className="app-container">
       <h1>Emoji Slicer</h1>
-      <Dropzone onFile={handleFile} preview={preview} />
+      <Dropzone onFile={handleFile} />
       {preview && (
         <div className="preview">
           <h2>Preview</h2>
@@ -80,7 +84,13 @@ const App: React.FC = () => {
           value={gridSize}
           onChange={(e) => setGridSize(+e.target.value)}
         />
-        <button onClick={sliceImage} disabled={!file}>
+        <button
+          onClick={() => {
+            setHasSliced(true);
+            sliceImage();
+          }}
+          disabled={!file}
+        >
           Slice Image
         </button>
       </div>
